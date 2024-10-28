@@ -6,15 +6,20 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc",
-    "start": "node dist/server.ts"
+    "start": "node dist/server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@types/express": "^5.0.0",
+    "cors": "^2.8.5",
     "express": "^4.21.0",
-    "mediasoup": "^1.0.0",
+    "mediasoup": "^3.14.14",
     "socket.io": "^4.8.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.4",
+    "typescript": "^5.6.2"
   }
 }

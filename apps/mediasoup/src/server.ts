@@ -1,28 +1,29 @@
 import express from 'express';
-import { Server } from 'socket.io';
+import cors from 'cors';
 import { createServer } from 'http';
 import { createWorker } from './configure/mediasoup-config';
-import { videoCallSocket } from './websocket/videoCallSocket';
-import router from './routes/videoCall';
+import { setupWebSocket } from './websocket/videoCallSocket';
+
 
 const app = express();
+app.use(cors({
+  origin: 'http://localhost:3000',
+  methods: ["GET", "POST"],
+  credentials: true
+}));
+app.use(express.json());
+
 const server = createServer(app);
-const io = new Server(server);
-const SERVER_PORT = 3000 ;
 
+async function startServer() {
+  await createWorker();  
+  setupWebSocket(server);  
 
+  server.listen(5000, () => {
+    console.log('Server is listening on http://localhost:5000');
+  });
+}
 
-
-createWorker().then(() => {
-    console.log('Mediasoup worker created');
+startServer().catch(err => {
+  console.error('Error starting server:', err);
 });
-
-
-videoCallSocket(io);
-
-app.use('/api/video-call',router);
-
-
-server.listen(3000, () => {
-    console.log(`Listining at port ${ SERVER_PORT } `)
-})

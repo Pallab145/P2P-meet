@@ -1,17 +1,41 @@
-import { Request, Response } from 'express';
-import { router } from '../configure/mediasoup-config';
+// import { getRouter } from "../configure/mediasoup-config";
 
-export const createWebRtcTransport = async (req: Request, res: Response): Promise<void> => {
+import { router } from "../configure/mediasoup-config";
+
+// const router = getRouter();
+
+export const webRtcTransport = async (callback : any) => {
   try {
-    const transport = await router.createWebRtcTransport({
-      listenIps: [{ ip: '0.0.0.0', announcedIp: 'your-public-ip' }],
+    const webRtcTransportOptions = {
+      listenIps: [{ ip: '127.0.0.1' }],
       enableUdp: true,
       enableTcp: true,
       preferUdp: true,
+    };
+
+    const transport = await router.createWebRtcTransport(webRtcTransportOptions);
+    console.log(`Transport created with ID: ${transport.id}`);
+
+    transport.on('dtlsstatechange', (dtlsState : any) => {
+      if (dtlsState === 'closed') {
+        transport.close();
+        console.log('Transport closed due to dtlsstatechange');
+      }
     });
-    res.status(200).json({ transport });
+
+    // transport.on('close', () => {
+    //   console.log('Transport closed');
+    // });
+
+    
+    callback({
+      id: transport.id,
+      iceParameters: transport.iceParameters,
+      iceCandidates: transport.iceCandidates,
+      dtlsParameters: transport.dtlsParameters,
+    });
   } catch (error) {
     console.error('Error creating WebRTC transport:', error);
-    res.status(500).send('Server error');
+    callback({ error });
   }
 };

@@ -1,26 +1,39 @@
-import { Server,Socket } from "socket.io";
-import { router } from "../configure/mediasoup-config";
+import { Server } from 'socket.io';
+// import { getRouter } from '../configure/mediasoup-config';
+import { webRtcTransport } from '../controller/videoCallController';
+import { router } from '../configure/mediasoup-config';
 
+export function setupWebSocket(server: any) {
+  const io = new Server(server, {
+    cors: {
+      origin: "http://localhost:3000",
+      methods: ["GET", "POST"],
+      credentials: true,
+    },
+  });
 
-export const videoCallSocket = (io : Server) => {
-    io.on('connection', (socket : Socket) => {
-        console.log("connection is on ");
+  io.on('connection', (socket) => {
+    console.log(`Socket connected: ${socket.id}`);
+    socket.emit('connection-success', { socketId: socket.id });
 
-        socket.on('join-room',async ({ room_id } : {room_id : string}) => {
-            console.log(`user join with room id ${ room_id }`);
+    socket.on('getRtpCapabilities', (callback: (data: { rtpCapabilities?: any; error?: string }) => void) => {
+      try {
+        //const router = getRouter(); 
+        const rtpCapabilities: any = router.rtpCapabilities; 
+        callback({ rtpCapabilities });
+        console.log('RTP Capabilities:', JSON.stringify(rtpCapabilities, null, 2));
 
-            const transport = await router.createWebRtcTransport({
-                listenIps: [{ ip: '0.0.0.0', announcedIp: 'your-public-ip' }],
-                enableUdp: true,
-                enableTcp: true,
-                preferUdp: true,
-            });
-
-            socket.emit('transportedCreated' ,{ transport });
-        });
-
-        socket.on('disconnect',() => {
-            console.log("user disconnected ", socket.id);
-        });
+      } catch (error) {
+        
+        const errorMessage = (error as Error).message || 'Unknown error';
+        console.error('Router not initialized:', errorMessage);
+        callback({ error: errorMessage });
+      }
     });
-};
+
+    socket.on('createWebRtcTransport', async ({ sender }, callback) => {
+      console.log(`Creating WebRTC transport for sender: ${sender}`);
+      await webRtcTransport(callback);
+    });
+  });
+}
