@@ -7,13 +7,38 @@ import socket from "./socket";
 export const VideoCall = () => {
   const [device, setDevice] = useState<mediasoupClient.Device | null>(null);
   const [rtpCapabilities, setRtpCapabilities] = useState<mediasoupClient.RtpCapabilities | null>(null);
+  const [localAudioTrack, setLocalAudioTrack] = useState<MediaStreamTrack | null>(null); 
+  const [localVideoTrack, setLocalVideoTrack] = useState<MediaStreamTrack | null>(null); 
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
+
 
   let producerTransport: any;
   let consumerTransport: any;
   let consumer: any;
   let producer: any;
+  let params = {
+    encodings: [
+      {
+        rid: 'r0',
+        maxBitrate: 100000,
+        scalabilityMode: 'S1T3',
+      },
+      {
+        rid: 'r1',
+        maxBitrate: 300000,
+        scalabilityMode: 'S1T3',
+      },
+      {
+        rid: 'r2',
+        maxBitrate: 900000,
+        scalabilityMode: 'S1T3',
+      },
+    ],
+    codecOptions: {
+      videoGoogleStartBitrate: 1000
+    }
+  }
 
   const getLocalVideo = async () => {
     try {
@@ -21,6 +46,12 @@ export const VideoCall = () => {
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
       }
+  
+      const [audioTrack] = stream.getAudioTracks() as MediaStreamTrack[] | [];
+      const [videoTrack] = stream.getVideoTracks() as MediaStreamTrack[] | [];
+  
+      setLocalAudioTrack(audioTrack || null);
+      setLocalVideoTrack(videoTrack || null);
     } catch (error) {
       console.error("Error getting local video:", error);
     }
@@ -60,10 +91,10 @@ export const VideoCall = () => {
       }
 
       producerTransport = device?.createSendTransport(params);
-      producerTransport?.on('connect', async ({ dtlsParameters }: any, callback: any) => {
+      producerTransport?.on('connect', ({ dtlsParameters }: any, callback: any) => {
         try {
-          await socket.emit('transport-connect', {
-            transportId: producerTransport.id,
+          socket.emit('transport-connect', {
+            // transportId: producerTransport.id,
             dtlsParameters,
           });
           callback();
@@ -72,9 +103,9 @@ export const VideoCall = () => {
         }
       });
 
-      producerTransport?.on('produce', async (params: any, callback: any) => {
+      producerTransport?.on('produce',(params: any, callback: any) => {
         try {
-          await socket.emit('transport-produce', {
+          socket.emit('transport-produce', {
             kind: params.kind,
             rtpParameters: params.rtpParameters,
           }, ({ id }: any) => {
@@ -89,8 +120,15 @@ export const VideoCall = () => {
 
   const connectSendTransport = async () => {
     try {
-      const track = localVideoRef.current?.srcObject?.getTracks()[0];
-      producer = await producerTransport.produce({ track });
+      
+      if (!localVideoTrack) {
+        console.error("No local video track available.");
+        return;
+      }
+      
+      producer = await producerTransport.produce({
+        track: localVideoTrack, 
+      });
 
       producer.on('trackended', () => {
         console.log("Track ended");
@@ -104,7 +142,7 @@ export const VideoCall = () => {
     }
   };
 
-  const createRecvTransport = async () => {
+  const createRecvTransport = () => {
     socket.emit('createWebRtcTransport', { sender: false }, (params: any) => {
       if (params.error) {
         console.error("Error creating recv transport:", params.error);
@@ -112,9 +150,9 @@ export const VideoCall = () => {
       }
 
       consumerTransport = device?.createRecvTransport(params);
-      consumerTransport?.on('connect', async ({ dtlsParameters }: any, callback: any) => {
+      consumerTransport?.on('connect', ({ dtlsParameters }: any, callback: any) => {
         try {
-          await socket.emit('transport-recv-connect', {
+          socket.emit('transport-recv-connect', {
             transportId: consumerTransport.id,
             dtlsParameters,
           });

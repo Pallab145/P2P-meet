@@ -5,7 +5,8 @@ import { router } from "../configure/mediasoup-config";
 export const webRtcTransport = async (callback : any) => {
   try {
     const webRtcTransportOptions = {
-      listenIps: [{ ip: '127.0.0.1' }],
+      listenIps: [{ ip: '0.0.0.0', 
+        announcedIp: '127.0.0.1', }],
       enableUdp: true,
       enableTcp: true,
       preferUdp: true,
@@ -32,7 +33,7 @@ export const webRtcTransport = async (callback : any) => {
       iceCandidates: transport.iceCandidates,
       dtlsParameters: transport.dtlsParameters,
     });
-
+    return transport;
   } catch (error) {
     console.error('Error creating WebRTC transport:', error);
     callback({ error });

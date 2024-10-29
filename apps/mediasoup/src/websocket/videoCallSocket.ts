@@ -11,14 +11,14 @@ export function setupWebSocket(server: any) {
     },
   });
 
-  let producerTransport: any;
-  let consumerTransport: any;
-  let producer: any;
-  let consumer: any;
-
   io.on('connection', (socket) => {
     console.log(`Socket connected: ${socket.id}`);
     socket.emit('connection-success', { socketId: socket.id });
+
+    let producerTransport: any;
+    let consumerTransport: any;
+    let producer: any;
+    let consumer: any;
 
     socket.on('getRtpCapabilities', (callback) => {
       try {
@@ -35,33 +35,33 @@ export function setupWebSocket(server: any) {
     socket.on('createWebRtcTransport', async ({ sender }, callback) => {
       try {
         console.log(`Creating WebRTC transport for sender: ${sender}`);
-        const transport = await webRtcTransport(callback);
-
+        const transport = await webRtcTransport(callback); 
+    
         if (sender) {
           producerTransport = transport;
         } else {
           consumerTransport = transport;
         }
-
-        callback();
+    
+        callback({ transport }); 
       } catch (error) {
         console.error('Error creating WebRTC transport:', error);
         callback({ error: (error as Error).message });
       }
     });
+    
 
     socket.on('transport-connect', async ({ dtlsParameters }) => {
       try {
-        if (!producerTransport) {
-          throw new Error("Producer transport not initialized");
-        }
-
+        if (!producerTransport) throw new Error("Producer transport not initialized");
+        
         console.log('Connecting transport with DTLS parameters:', dtlsParameters);
         await producerTransport.connect({ dtlsParameters });
       } catch (error) {
         console.error('Error connecting transport:', error);
       }
     });
+    
 
     socket.on('transport-produce', async ({ kind, rtpParameters }, callback) => {
       try {
@@ -91,42 +91,54 @@ export function setupWebSocket(server: any) {
       }
     });
 
-    // Consume
     socket.on('consume', async ({ rtpCapabilities }, callback) => {
       try {
         if (!producer) throw new Error("Producer not initialized");
         if (!consumerTransport) throw new Error("Consumer transport not initialized");
-
+    
         if (!router.canConsume({ producerId: producer.id, rtpCapabilities })) {
           throw new Error("Cannot consume");
         }
-
+    
         consumer = await consumerTransport.consume({
           producerId: producer.id,
           rtpCapabilities,
           paused: true,
         });
-
+    
         consumer.on('transportclose', () => {
           console.log('Consumer transport closed');
         });
-
+    
         consumer.on('producerclose', () => {
           console.log('Producer closed for consumer');
         });
-
+    
         const params = {
           id: consumer.id,
           producerId: producer.id,
           kind: consumer.kind,
           rtpParameters: consumer.rtpParameters,
         };
-
+    
         callback({ params });
         console.log(`Consumer created with ID: ${consumer.id}`);
       } catch (error) {
         console.error('Error in consume:', error);
         callback({ error });
+      }
+    });
+    
+
+    
+    socket.on('disconnect', () => {
+      console.log(`Socket disconnected: ${socket.id}`);
+  
+      if (producerTransport) {
+        producerTransport.close();
+      }
+      if (consumerTransport) {
+        consumerTransport.close();
       }
     });
   });
