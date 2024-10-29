@@ -65,16 +65,20 @@ export function setupWebSocket(server: any) {
 
     socket.on('transport-produce', async ({ kind, rtpParameters }, callback) => {
       try {
-        if (!producerTransport) throw new Error("Producer transport not initialized");
-
+        if (!producerTransport) {
+          throw new Error("Producer transport not initialized");
+        }
+    
+        // Attempt to produce media
         producer = await producerTransport.produce({ kind, rtpParameters });
         callback({ id: producer.id });
-
+    
+        // Emit producer-ready event
         socket.emit('producer-ready', { producerId: producer.id });
         console.log(`Producer created with ID: ${producer.id}`);
       } catch (error) {
         console.error('Error in transport produce:', error);
-        callback({ error });
+        callback({ error: (error as Error).message });
       }
     });
 
@@ -93,13 +97,19 @@ export function setupWebSocket(server: any) {
 
     socket.on('consume', async ({ rtpCapabilities }, callback) => {
       try {
-        if (!producer) throw new Error("Producer not initialized");
-        if (!consumerTransport) throw new Error("Consumer transport not initialized");
+        if (!producer) {
+          throw new Error("Producer not initialized");
+        }
+        if (!consumerTransport) {
+          throw new Error("Consumer transport not initialized");
+        }
     
+        // Check if we can consume the producer
         if (!router.canConsume({ producerId: producer.id, rtpCapabilities })) {
           throw new Error("Cannot consume");
         }
     
+        // Consume the producer
         consumer = await consumerTransport.consume({
           producerId: producer.id,
           rtpCapabilities,
@@ -125,9 +135,10 @@ export function setupWebSocket(server: any) {
         console.log(`Consumer created with ID: ${consumer.id}`);
       } catch (error) {
         console.error('Error in consume:', error);
-        callback({ error });
+        callback({ error: (error as Error).message });
       }
     });
+    
     
 
     

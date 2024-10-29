@@ -165,6 +165,14 @@ export const VideoCall = () => {
   };
 
   const connectRecvTransport = async () => {
+    console.log("Requesting to consume with rtpCapabilities:", device?.rtpCapabilities);
+  
+    // Ensure that the producer is created before consuming
+    if (!producer) {
+      console.error("Producer not initialized");
+      return;
+    }
+  
     socket.emit('consume', {
       rtpCapabilities: device?.rtpCapabilities,
     }, async ({ params }: any) => {
@@ -172,7 +180,9 @@ export const VideoCall = () => {
         console.error("Error consuming transport:", params.error);
         return;
       }
-
+  
+      console.log("Received consume parameters:", params);
+  
       try {
         consumer = await consumerTransport.consume({
           id: params.id,
@@ -180,18 +190,28 @@ export const VideoCall = () => {
           kind: params.kind,
           rtpParameters: params.rtpParameters,
         });
-
+  
+        console.log("Consumer created successfully:", consumer);
+  
         const { track } = consumer;
+        console.log("Received track from consumer:", track);
+  
         if (remoteVideoRef.current) {
           remoteVideoRef.current.srcObject = new MediaStream([track]);
+          console.log("Assigned track to remote video element.");
+        } else {
+          console.warn("Remote video ref not set.");
         }
-
+  
+        // Request server to resume the consumer if paused
         socket.emit('consumer-resume');
       } catch (error) {
         console.error("Error connecting recv transport:", error);
       }
     });
   };
+  
+  
 
   return (
     <div className="flex flex-col items-center p-8 space-y-6 bg-gray-100">
