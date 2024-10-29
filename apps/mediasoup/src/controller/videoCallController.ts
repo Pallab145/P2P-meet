@@ -1,8 +1,6 @@
-// import { getRouter } from "../configure/mediasoup-config";
 
 import { router } from "../configure/mediasoup-config";
 
-// const router = getRouter();
 
 export const webRtcTransport = async (callback : any) => {
   try {
@@ -34,6 +32,7 @@ export const webRtcTransport = async (callback : any) => {
       iceCandidates: transport.iceCandidates,
       dtlsParameters: transport.dtlsParameters,
     });
+
   } catch (error) {
     console.error('Error creating WebRTC transport:', error);
     callback({ error });

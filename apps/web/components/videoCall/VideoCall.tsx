@@ -10,6 +10,11 @@ export const VideoCall = () => {
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
 
+  let producerTransport: any;
+  let consumerTransport: any;
+  let consumer: any;
+  let producer: any;
+
   const getLocalVideo = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
@@ -23,11 +28,12 @@ export const VideoCall = () => {
 
   const getRtpCapabilities = () => {
     socket.emit('getRtpCapabilities', (data: any) => {
-      console.log(`RTP Capabilities:`, data); 
-      const rtpCapabilities = data.rtpCapabilities;
-
-      
-      setRtpCapabilities(rtpCapabilities);
+      if (data.error) {
+        console.error("Error getting RTP Capabilities:", data.error);
+        return;
+      }
+      console.log("RTP Capabilities:", data);
+      setRtpCapabilities(data.rtpCapabilities);
     });
   };
 
@@ -36,44 +42,117 @@ export const VideoCall = () => {
       console.error("RTP capabilities not available.");
       return;
     }
-  
     try {
       const newDevice = new mediasoupClient.Device();
-      
-      
       await newDevice.load({ routerRtpCapabilities: rtpCapabilities });
-      
       console.log("Device created successfully:", newDevice);
-      setDevice(newDevice); 
-      console.log(`RTP Capabilities in Device:`, newDevice.rtpCapabilities);
+      setDevice(newDevice);
     } catch (error) {
-      console.error("Creating device error:", error);
-     
+      console.error("Error creating device:", error);
     }
   };
-  
 
   const createSendTransport = () => {
-    socket.emit('createWebRtcTransport', { sender: true }, (params : any) => {
+    socket.emit('createWebRtcTransport', { sender: true }, (params: any) => {
       if (params.error) {
-        console.log('Error creating WebRTC Transport:', params.error);
+        console.error("Error creating WebRTC Transport:", params.error);
         return;
       }
-      console.log('WebRTC Transport Params:', params);
 
+      producerTransport = device?.createSendTransport(params);
+      producerTransport?.on('connect', async ({ dtlsParameters }: any, callback: any) => {
+        try {
+          await socket.emit('transport-connect', {
+            transportId: producerTransport.id,
+            dtlsParameters,
+          });
+          callback();
+        } catch (error) {
+          console.error("Error connecting transport:", error);
+        }
+      });
+
+      producerTransport?.on('produce', async (params: any, callback: any) => {
+        try {
+          await socket.emit('transport-produce', {
+            kind: params.kind,
+            rtpParameters: params.rtpParameters,
+          }, ({ id }: any) => {
+            callback({ id });
+          });
+        } catch (error) {
+          console.error("Error producing transport:", error);
+        }
+      });
     });
   };
 
-  const connectSendTransport = () => {
-    
+  const connectSendTransport = async () => {
+    try {
+      const track = localVideoRef.current?.srcObject?.getTracks()[0];
+      producer = await producerTransport.produce({ track });
+
+      producer.on('trackended', () => {
+        console.log("Track ended");
+      });
+
+      producer.on('transportclose', () => {
+        console.log("Transport closed");
+      });
+    } catch (error) {
+      console.error("Error connecting send transport:", error);
+    }
   };
 
-  const createRecvTransport = () => {
-    
+  const createRecvTransport = async () => {
+    socket.emit('createWebRtcTransport', { sender: false }, (params: any) => {
+      if (params.error) {
+        console.error("Error creating recv transport:", params.error);
+        return;
+      }
+
+      consumerTransport = device?.createRecvTransport(params);
+      consumerTransport?.on('connect', async ({ dtlsParameters }: any, callback: any) => {
+        try {
+          await socket.emit('transport-recv-connect', {
+            transportId: consumerTransport.id,
+            dtlsParameters,
+          });
+          callback();
+        } catch (error) {
+          console.error("Error connecting recv transport:", error);
+        }
+      });
+    });
   };
 
-  const connectRecvTransport = () => {
-    
+  const connectRecvTransport = async () => {
+    socket.emit('consume', {
+      rtpCapabilities: device?.rtpCapabilities,
+    }, async ({ params }: any) => {
+      if (params.error) {
+        console.error("Error consuming transport:", params.error);
+        return;
+      }
+
+      try {
+        consumer = await consumerTransport.consume({
+          id: params.id,
+          producerId: params.producerId,
+          kind: params.kind,
+          rtpParameters: params.rtpParameters,
+        });
+
+        const { track } = consumer;
+        if (remoteVideoRef.current) {
+          remoteVideoRef.current.srcObject = new MediaStream([track]);
+        }
+
+        socket.emit('consumer-resume');
+      } catch (error) {
+        console.error("Error connecting recv transport:", error);
+      }
+    });
   };
 
   return (
