@@ -1,12 +1,7 @@
-
-import { router } from "../configure/mediasoup-config";
-
-
-export const webRtcTransport = async (callback : any) => {
+export const webRtcTransport = async (router: any, callback: any) => {
   try {
     const webRtcTransportOptions = {
-      listenIps: [{ ip: '0.0.0.0', 
-        announcedIp: '45.250.246.38', }],
+      listenIps: [{ ip: '0.0.0.0', announcedIp: '45.250.246.154' }],
       enableUdp: true,
       enableTcp: true,
       preferUdp: true,
@@ -15,18 +10,13 @@ export const webRtcTransport = async (callback : any) => {
     const transport = await router.createWebRtcTransport(webRtcTransportOptions);
     console.log(`Transport created with ID: ${transport.id}`);
 
-    transport.on('dtlsstatechange', (dtlsState : any) => {
+    transport.on('dtlsstatechange', (dtlsState: any) => {
       if (dtlsState === 'closed') {
         transport.close();
         console.log('Transport closed due to dtlsstatechange');
       }
     });
 
-    // transport.on('close', () => {
-    //   console.log('Transport closed');
-    // });
-
-    
     callback({
       id: transport.id,
       iceParameters: transport.iceParameters,
@@ -36,6 +26,6 @@ export const webRtcTransport = async (callback : any) => {
     return transport;
   } catch (error) {
     console.error('Error creating WebRTC transport:', error);
-    callback({ error });
+    callback({ error: (error as Error).message });
   }
 };

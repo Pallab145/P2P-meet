@@ -1,6 +1,6 @@
 import { Server } from 'socket.io';
 import { webRtcTransport } from '../controller/videoCallController';
-import { router } from '../configure/mediasoup-config';
+import { mediaCodecs, worker } from '../configure/mediasoup-config';
 
 export function setupWebSocket(server: any) {
   const io = new Server(server, {
@@ -11,39 +11,51 @@ export function setupWebSocket(server: any) {
     },
   });
 
-  io.on('connection', (socket) => {
+  let producerTransport: any;
+  let consumerTransport: any;
+  let producer: any;
+  let consumer: any;
+  let router: any;
+
+  async function initializeRouter() {
+    if (!router) {
+      router = await worker.createRouter({ mediaCodecs });
+      console.log('Router created');
+    }
+  }
+
+  io.on('connection', async (socket) => {
     console.log(`Socket connected: ${socket.id}`);
     socket.emit('connection-success', { socketId: socket.id });
 
-    let producerTransport: any;
-    let consumerTransport: any;
-    let producer: any;
-    let consumer: any;
+    await initializeRouter();
 
-    socket.on('getRtpCapabilities', (callback) => {
+    socket.on('getRtpCapabilities', async (callback) => {
       try {
         if (!router) throw new Error("Router not initialized");
         const rtpCapabilities = router.rtpCapabilities;
-        callback({ rtpCapabilities });
-        console.log('RTP Capabilities:', JSON.stringify(rtpCapabilities, null, 2));
+        console.log("Router RTP Capabilities:", rtpCapabilities);
+        if (callback) {
+          callback({ rtpCapabilities });
+        }
       } catch (error) {
         console.error('Error fetching RTP capabilities:', error);
-        callback({ error: (error as Error).message });
+        if (callback) {
+          callback({ error });
+        }
       }
     });
-
-    socket.on('createWebRtcTransport', async ({ sender }, callback) => {
-      try {
-        console.log(`Creating WebRTC transport for sender: ${sender}`);
-        const transport = await webRtcTransport(callback); 
     
-        if (sender) {
+
+    socket.on('createWebRtcTransport', async (data, callback) => {
+      try {
+        const transport = await webRtcTransport(router, callback);
+        if (data.sender) {
           producerTransport = transport;
         } else {
           consumerTransport = transport;
         }
-    
-        callback({ transport }); 
+        callback({ transport });
       } catch (error) {
         console.error('Error creating WebRTC transport:', error);
         callback({ error: (error as Error).message });
@@ -69,11 +81,9 @@ export function setupWebSocket(server: any) {
           throw new Error("Producer transport not initialized");
         }
     
-        // Attempt to produce media
         producer = await producerTransport.produce({ kind, rtpParameters });
         callback({ id: producer.id });
     
-        // Emit producer-ready event
         socket.emit('producer-ready', { producerId: producer.id });
         console.log(`Producer created with ID: ${producer.id}`);
       } catch (error) {
@@ -139,9 +149,11 @@ export function setupWebSocket(server: any) {
       }
     });
     
-    
+    socket.on('consumer-resume',async () => {
+      console.log("consumer resume");
+      await consumer.resume();
+    })
 
-    
     socket.on('disconnect', () => {
       console.log(`Socket disconnected: ${socket.id}`);
   
