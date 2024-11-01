@@ -50,17 +50,21 @@ export function setupWebSocket(server: any) {
     socket.on('createWebRtcTransport', async (data, callback) => {
       try {
         const transport = await webRtcTransport(router, callback);
+        console.log("transport is");
+        console.log(transport);
         if (data.sender) {
           producerTransport = transport;
         } else {
           consumerTransport = transport;
         }
-        callback({ transport });
+        // We already do this inside the webRtcTransport function. No need to call callback again.
+        // callback({ transport });
       } catch (error) {
         console.error('Error creating WebRTC transport:', error);
         callback({ error: (error as Error).message });
       }
     });
+    
     
 
     socket.on('transport-connect', async ({ dtlsParameters }) => {
@@ -145,9 +149,10 @@ export function setupWebSocket(server: any) {
         console.log(`Consumer created with ID: ${consumer.id}`);
       } catch (error) {
         console.error('Error in consume:', error);
-        callback({ error: (error as Error).message });
+        
       }
     });
+    
     
     socket.on('consumer-resume',async () => {
       console.log("consumer resume");

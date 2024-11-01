@@ -1,7 +1,7 @@
 export const webRtcTransport = async (router: any, callback: any) => {
   try {
     const webRtcTransportOptions = {
-      listenIps: [{ ip: '0.0.0.0', announcedIp: '45.250.246.154' }],
+      listenIps: [{ ip: '0.0.0.0', announcedIp: '127.0.0.1' }],
       enableUdp: true,
       enableTcp: true,
       preferUdp: true,
