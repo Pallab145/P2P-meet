@@ -1,10 +1,9 @@
-import { AppBar } from "../../components/AppBar";
-import { SideBar } from "../../components/SideBar";
+import { BackgroundBeamsWithCollisionDemo } from "../../components/Background";
+
 
 
 export default function Home(){
-    return <div className="bg-black">
-        <AppBar />
-        <SideBar />
+    return <div>
+        <BackgroundBeamsWithCollisionDemo />
     </div>
 }

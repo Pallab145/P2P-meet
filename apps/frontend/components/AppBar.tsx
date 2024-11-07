@@ -1,28 +1,12 @@
 export const AppBar = () => {
     return (
-        <div className="flex flex-row justify-between items-center h-14 px-4 bg-gray-800 text-white">
-            <div className="flex items-center space-x-8">
-                <div className="flex items-center">
-                    <img
-                        src="https://static.twitchcdn.net/assets/favicon-32-e29e246c157142c94346.png"
-                        alt="Twitch Logo"
-                        className="h-8 w-8"
-                    />
-                </div>
-                <div className="ml-2 font-bold">Browse</div>
-                <MenuIcon />
-            </div>
-            
-            
+        <div className="flex flex-row justify-between items-center h-14 px-4 bg-black text-white">
+ 
             <div className="flex items-center w-1/3">
-                <input
-                    type="text"
-                    placeholder="Search"
-                    className="w-full px-3 py-1 rounded-l-md bg-gray-700 text-white border-none focus:outline-none"
-                />
-                <button className="px-4 py-1 bg-gray-700 rounded-r-md">
-                    <span role="img" aria-label="search">🔍</span>
-                </button>
+                <div className="h-8 w-8 mr-2">
+                    <img src="/video-camera.png" alt="video-camera" />
+                </div>
+                <span className="text-xl font-semibold">Video Chat</span>
             </div>
 
             <div className="flex items-center space-x-4">
@@ -35,15 +19,6 @@ export const AppBar = () => {
         </div>
     );
 };
-
-
-const MenuIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={24} height={24} color={"#ffffff"} fill={"none"} {...props}>
-      <path d="M4 5L20 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M4 12L20 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M4 19L20 19" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-);
 
 const UserIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={24} height={24} color={"#ffffff"} fill={"none"} {...props}>
