@@ -6,12 +6,11 @@ export const AppBar = () => {
                 <div className="h-8 w-8 mr-2">
                     <img src="/video-camera.png" alt="video-camera" />
                 </div>
-                <span className="text-xl font-semibold">Video Chat</span>
+                <span className="text-xl font-semibold">meet.io</span>
             </div>
 
             <div className="flex items-center space-x-4">
-                <button className="px-4 py-1 bg-gray-700 rounded-md hover:bg-gray-600">Log In</button>
-                <button className="px-4 py-1 bg-purple-600 rounded-md hover:bg-purple-500">Sign Up</button>
+                <button className="px-4 py-1 bg-blue-600 rounded-md hover:bg-blue-500">Login</button>
                 <div className="p-2 rounded-full bg-gray-700 hover:bg-gray-600">
                     <UserIcon />
                 </div>

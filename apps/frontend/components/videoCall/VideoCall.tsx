@@ -2,6 +2,7 @@
 import { useRef } from "react";
 import * as mediasoupClient from "mediasoup-client";
 import socket from "./socket";
+import { VideoP2P } from "../ui/VideoP2P";
 
 export const VideoCall = () => {
   const deviceRef = useRef<mediasoupClient.Device | null>(null);
@@ -196,8 +197,8 @@ export const VideoCall = () => {
   
         const rtpCapabilities = rtpCapabilitiesRef.current;
         if (rtpCapabilities) {
-          const newDevice = await createDevice(rtpCapabilities);  // Capture the new device
-          if (newDevice) {  // Use the new device for transport creation
+          const newDevice = await createDevice(rtpCapabilities);  
+          if (newDevice) {  
             await createSendTransport(newDevice);
             console.log("Created send transport");
   
@@ -227,32 +228,10 @@ export const VideoCall = () => {
   
 
   return (
-    <div className="flex flex-col items-center p-8 space-y-6 bg-gray-100">
-      <div className="flex space-x-6">
-        <div className="flex flex-col items-center">
-          <h2 className="text-lg font-semibold mb-2">Local Video</h2>
-          <video
-            ref={localVideoRef}
-            autoPlay
-            muted
-            className="w-72 h-40 bg-black"
-          />
-        </div>
-        <div className="flex flex-col items-center">
-          <h2 className="text-lg font-semibold mb-2">Remote Video</h2>
-          <video
-            ref={remoteVideoRef}
-            autoPlay
-            className="w-72 h-40 bg-black"
-          />
-        </div>
-      </div>
-      <button
-        onClick={startVideoCall}
-        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-      >
-        Start Video Call
-      </button>
-    </div>
+    <VideoP2P 
+      startVideoCall={startVideoCall} 
+      localVideoRef={localVideoRef} 
+      remoteVideoRef={remoteVideoRef} 
+    />
   );
 };

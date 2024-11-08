@@ -15,6 +15,9 @@ module.exports = {
         "2xl": "1400px",
       },
     },
+    // plugins: [
+    //   require('tailwind-scrollbar'),
+    // ],
     extend: {
       colors: {
         border: "hsl(var(--border))",
