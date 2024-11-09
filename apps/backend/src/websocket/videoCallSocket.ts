@@ -16,6 +16,7 @@ export function setupWebSocket(server: any) {
   let producer: any;
   let consumer: any;
   let router: any;
+  const rooms: Record<number, { producerTransports: Record<string, any>, consumerTransports: Record<string, any>, producer: any }> = {};
 
   async function initializeRouter() {
     if (!router) {
@@ -29,6 +30,25 @@ export function setupWebSocket(server: any) {
     socket.emit('connection-success', { socketId: socket.id });
 
     await initializeRouter();
+
+    socket.on('create-room', (callback) => {
+      const roomID = Math.floor(Math.random() * 900000) + 100000;
+      rooms[roomID] = { producerTransports: {}, consumerTransports: {}, producer: null };
+      console.log(`Room created with ID: ${roomID}`);
+      callback(roomID);
+    });
+  
+    socket.on('join-room', async (roomID, callback) => {
+      if (!rooms[roomID]) {
+        return callback({ error: "Room does not exist" });
+      }
+      socket.join(roomID);
+      rooms[roomID].producerTransports[socket.id] = null;
+      rooms[roomID].consumerTransports[socket.id] = null;
+      callback({ success: true });
+      socket.to(roomID).emit('user-joined', { userId: socket.id });
+    });
+  
 
     socket.on('getRtpCapabilities', async (callback) => {
       try {

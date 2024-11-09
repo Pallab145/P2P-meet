@@ -2,7 +2,7 @@
 
 import { useState, } from "react";
 
-export const VideoP2P = ( { startVideoCall,localVideoRef,remoteVideoRef } : any) => {
+export const VideoP2P = ( { startVideoCall,localVideoRef,remoteVideoRef,joinRoom } : any) => {
   const [microphoneActive, setMicrophoneActive] = useState(true);
   const [videoActive, setVideoActive] = useState(true);
   const [shareScreenActive, setShareScreenActive] = useState(true);
@@ -46,6 +46,10 @@ export const VideoP2P = ( { startVideoCall,localVideoRef,remoteVideoRef } : any)
         <button onClick={startVideoCall} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
           Start Video Call
         </button>
+        <button onClick={joinRoom} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+          Join room
+        </button>
+        <input className="text-black px-4 py-2 rounded" type="text" placeholder="123456" />
       </div>
       <div className="bg-slate-500 text-white p-4 w-full flex justify-center space-x-4">
         <div>

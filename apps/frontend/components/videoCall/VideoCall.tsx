@@ -1,5 +1,5 @@
 "use client";
-import { useRef } from "react";
+import { useState,useRef } from "react";
 import * as mediasoupClient from "mediasoup-client";
 import socket from "./socket";
 import { VideoP2P } from "../ui/VideoP2P";
@@ -11,6 +11,9 @@ export const VideoCall = () => {
   const localVideoTrackRef = useRef<MediaStreamTrack | null>(null);
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
+  const [roomID, setRoomID] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+
   let producerTransport: any;
   let consumerTransport: any;
   let consumer: any;
