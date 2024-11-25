@@ -11,7 +11,7 @@ export const VideoCall = () => {
   const localVideoTrackRef = useRef<MediaStreamTrack | null>(null);
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
-  const [roomID, setRoomID] = useState("");
+  const setRoomID = useRef("");
   const [errorMessage, setErrorMessage] = useState("");
 
   let producerTransport: any;
@@ -73,7 +73,7 @@ export const VideoCall = () => {
 
   const createSendTransport = (newDevice: mediasoupClient.Device) => {
     return new Promise<void>((resolve, reject) => {
-      socket.emit('createWebRtcTransport', { sender: true }, (params: any) => {
+      socket.emit('createWebRtcTransport', { sender: true, roomID : localStorage.getItem('roomID') }, (params: any) => {
         if (params.error) {
           console.error("Error creating WebRTC Transport:", params.error);
           reject(params.error);
@@ -92,6 +92,7 @@ export const VideoCall = () => {
             kind: params.kind,
             rtpParameters: params.rtpParameters,
           }, ({ id }: any) => {
+            console.log(`producerTransport id is ${id} `)
             callback({ id });
           });
         });
@@ -120,9 +121,9 @@ export const VideoCall = () => {
     }
   };
 
-  const createRecvTransport = () => {
+  const createRecvTransport = (roomID: string) => {
     return new Promise<void>((resolve, reject) => {
-      socket.emit('createWebRtcTransport', { sender: false }, (params: any) => {
+      socket.emit('createWebRtcTransport', { sender: false, roomID: roomID }, (params: any) => {
         if (params.error) {
           console.error("Error creating recv transport:", params.error);
           reject(params.error);
@@ -133,6 +134,7 @@ export const VideoCall = () => {
           socket.emit('transport-recv-connect', {
             transportId: consumerTransport.id,
             dtlsParameters,
+            roomID: roomID,  // Ensure roomID is passed here
           });
           callback();
         });
@@ -141,93 +143,135 @@ export const VideoCall = () => {
     });
   };
   
-
-  const connectRecvTransport = async () => {
-    if (!producer) {
-      console.error("Producer not initialized");
-      return;
-    }
-  
-    socket.emit('consume', {
-      rtpCapabilities: deviceRef.current?.rtpCapabilities,
-    }, async (response: any) => {
-      console.log("Consume response:", response);
-      
-      if (!response) {
-        console.error("No response received from consume call.");
-        return;
-      }
-      
-      const { params } = response;
-      if (!params || params.error) {
-        console.error("Error consuming transport or params is undefined:", params?.error);
+  const connectRecvTransport = async (roomID: string) => {
+    socket.emit('get-producer', { roomId: roomID }, async (response: any) => {
+      if (!response || !response.producerId) {
+        console.error("Producer not initialized or response is invalid");
         return;
       }
   
-      try {
-        consumer = await consumerTransport.consume({
-          id: params.id,
-          producerId: params.producerId,
-          kind: params.kind,
-          rtpParameters: params.rtpParameters,
-        });
+      socket.emit('consume', {
+        rtpCapabilities: deviceRef.current?.rtpCapabilities,
+        producerId: response.producerId,
+        roomID: roomID,  // Ensure roomID is passed here
+      }, async (consumeResponse: any) => {
+        console.log("Consume response:", consumeResponse);
   
-        const { track } = consumer;
-        if (remoteVideoRef.current) {
-          remoteVideoRef.current.srcObject = new MediaStream([track]);
+        if (!consumeResponse) {
+          console.error("No response received from consume call.");
+          return;
         }
   
-        socket.emit('consumer-resume');
-      } catch (error) {
-        console.error("Error connecting recv transport:", error);
-      }
+        const { params } = consumeResponse;
+        if (!params || params.error) {
+          console.error("Error consuming transport or params is undefined:", params?.error);
+          return;
+        }
+  
+        try {
+          consumer = await consumerTransport.consume({
+            id: params.id,
+            producerId: params.producerId,
+            kind: params.kind,
+            rtpParameters: params.rtpParameters,
+          });
+  
+          const { track } = consumer;
+          if (remoteVideoRef.current) {
+            remoteVideoRef.current.srcObject = new MediaStream([track]);
+          }
+  
+          socket.emit('consumer-resume');
+        } catch (error) {
+          console.error("Error connecting recv transport:", error);
+        }
+      });
     });
   };
   
   
   
-
+  
+  const createRoom = () => {
+    socket.emit("create-room", (generatedRoomID: string) => {
+      console.log(`Room created with ID: ${generatedRoomID}`);
+      localStorage.setItem('roomID', generatedRoomID); 
+      console.log(`Stored room ID in localStorage: ${generatedRoomID}`);
+    });
+  };
+  
   const startVideoCall = async () => {
     try {
-      console.log("Started video call");
+      console.log("Starting video call");
+  
+      createRoom(); 
   
       await getLocalVideo();
       console.log("Got local video");
   
-      if (localVideoTrackRef.current && localAudioTrackRef.current) {
-        await getRtpCapabilities();
-        console.log("Got RTP capabilities");
+      await getRtpCapabilities();
+      const rtpCapabilities = rtpCapabilitiesRef.current;
+      const newDevice = await createDevice(rtpCapabilities);
+      if (newDevice) {
+        await createSendTransport(newDevice);
   
-        const rtpCapabilities = rtpCapabilitiesRef.current;
-        if (rtpCapabilities) {
-          const newDevice = await createDevice(rtpCapabilities);  
-          if (newDevice) {  
-            await createSendTransport(newDevice);
-            console.log("Created send transport");
+        producer = await producerTransport.produce({ track: localVideoTrackRef.current });
+        console.log("Producer created with ID:", producer.id);
+        
+        // Emit an event to notify the backend about the producer
+        const roomId = localStorage.getItem('roomID');
+        socket.emit('producer-ready', { producerId: producer.id, roomId: roomId });
   
-            if (producerTransport) {
-              await connectSendTransport();
-              console.log("Connected send transport");
-            } else {
-              console.error("Producer transport not available.");
-            }
-            
-            await createRecvTransport();
-            console.log("Created receive transport");
-  
-            await connectRecvTransport();
-            console.log("Connected receive transport");
-          }
-        } else {
-          console.error("RTP capabilities not available.");
-        }
+        await connectSendTransport();
+        console.log("Started video call successfully");
       } else {
-        console.error("Local media tracks not available.");
+        console.error("Device creation failed.");
       }
+  
     } catch (error) {
       console.error("Error starting video call:", error);
     }
   };
+  
+  
+  
+
+  const joinRoom = (roomToJoin: string) => {
+    console.log(`Attempting to join room with ID: ${roomToJoin}`);
+    socket.emit("join-room", roomToJoin, (response: any) => {
+      if (response.error) {
+        setErrorMessage(response.error);
+        console.error("Error joining room:", response.error);
+      } else {
+        console.log(`Joined room with ID: ${roomToJoin}`);
+      }
+    });
+  };
+  
+  const joinVideoCall = async (roomID: string) => {
+    if (!roomID) {
+      setErrorMessage("No room ID provided.");
+      return;
+    }
+  
+    console.log("Joining video call");
+    joinRoom(roomID);
+  
+    await getLocalVideo();
+    console.log("Got local video");
+  
+    await getRtpCapabilities();
+    const rtpCapabilities = rtpCapabilitiesRef.current;
+    const newDevice = await createDevice(rtpCapabilities);
+    if (newDevice) {
+      await createRecvTransport(roomID);
+      await connectRecvTransport(roomID);
+      console.log("Joined video call successfully");
+    } else {
+      console.error("Device creation failed.");
+    }
+  };
+  
   
 
   return (
@@ -235,6 +279,7 @@ export const VideoCall = () => {
       startVideoCall={startVideoCall} 
       localVideoRef={localVideoRef} 
       remoteVideoRef={remoteVideoRef} 
+      joinRoom={joinVideoCall}
     />
   );
 };
