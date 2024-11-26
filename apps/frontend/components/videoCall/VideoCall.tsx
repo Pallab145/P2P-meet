@@ -1,5 +1,5 @@
 "use client";
-import { useState,useRef } from "react";
+import { useState, useRef } from "react";
 import * as mediasoupClient from "mediasoup-client";
 import socket from "./socket";
 import { VideoP2P } from "../ui/VideoP2P";
@@ -11,13 +11,37 @@ export const VideoCall = () => {
   const localVideoTrackRef = useRef<MediaStreamTrack | null>(null);
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
-  const setRoomID = useRef("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [micOn, setMicOn] = useState(false);
+  const [videoOn, setVideoOn] = useState(false);
+  const [roomIdInput, setRoomIdInput] = useState("");
 
   let producerTransport: any;
   let consumerTransport: any;
   let consumer: any;
   let producer: any;
+
+  const toggleMic = () => {
+    if (localAudioTrackRef.current) {
+      const enabled = !localAudioTrackRef.current.enabled;
+      localAudioTrackRef.current.enabled = enabled;
+      setMicOn(enabled);
+      console.log(`Microphone ${enabled ? "enabled" : "disabled"}`);
+    } else {
+      console.error("No audio track available to toggle.");
+    }
+  };
+
+  const toggleVideo = () => {
+    if (localVideoTrackRef.current) {
+      const enabled = !localVideoTrackRef.current.enabled;
+      localVideoTrackRef.current.enabled = enabled;
+      setVideoOn(enabled);
+      console.log(`Video ${enabled ? "enabled" : "disabled"}`);
+    } else {
+      console.error("No video track available to toggle.");
+    }
+  };
 
   const getLocalVideo = async () => {
     try {
@@ -38,7 +62,6 @@ export const VideoCall = () => {
 
   const getRtpCapabilities = (): Promise<mediasoupClient.RtpCapabilities> => {
     return new Promise((resolve, reject) => {
-      console.log("Requesting RTP Capabilities");
       socket.emit('getRtpCapabilities', (response: any) => {
         console.log("Received response from backend:", response);
         if (response.error) {
@@ -73,7 +96,7 @@ export const VideoCall = () => {
 
   const createSendTransport = (newDevice: mediasoupClient.Device) => {
     return new Promise<void>((resolve, reject) => {
-      socket.emit('createWebRtcTransport', { sender: true, roomID : localStorage.getItem('roomID') }, (params: any) => {
+      socket.emit('createWebRtcTransport', { sender: true, roomID: localStorage.getItem('roomID') }, (params: any) => {
         if (params.error) {
           console.error("Error creating WebRTC Transport:", params.error);
           reject(params.error);
@@ -81,12 +104,12 @@ export const VideoCall = () => {
         }
         producerTransport = newDevice.createSendTransport(params);
         console.log("Produced transport is:", producerTransport);
-        
+
         producerTransport.on('connect', ({ dtlsParameters }: any, callback: any) => {
           socket.emit('transport-connect', { dtlsParameters });
           callback();
         });
-        
+
         producerTransport.on('produce', (params: any, callback: any) => {
           socket.emit('transport-produce', {
             kind: params.kind,
@@ -142,32 +165,32 @@ export const VideoCall = () => {
       });
     });
   };
-  
+
   const connectRecvTransport = async (roomID: string) => {
     socket.emit('get-producer', { roomId: roomID }, async (response: any) => {
       if (!response || !response.producerId) {
         console.error("Producer not initialized or response is invalid");
         return;
       }
-  
+
       socket.emit('consume', {
         rtpCapabilities: deviceRef.current?.rtpCapabilities,
         producerId: response.producerId,
         roomID: roomID,  // Ensure roomID is passed here
       }, async (consumeResponse: any) => {
         console.log("Consume response:", consumeResponse);
-  
+
         if (!consumeResponse) {
           console.error("No response received from consume call.");
           return;
         }
-  
+
         const { params } = consumeResponse;
         if (!params || params.error) {
           console.error("Error consuming transport or params is undefined:", params?.error);
           return;
         }
-  
+
         try {
           consumer = await consumerTransport.consume({
             id: params.id,
@@ -175,12 +198,12 @@ export const VideoCall = () => {
             kind: params.kind,
             rtpParameters: params.rtpParameters,
           });
-  
+
           const { track } = consumer;
           if (remoteVideoRef.current) {
             remoteVideoRef.current.srcObject = new MediaStream([track]);
           }
-  
+
           socket.emit('consumer-resume');
         } catch (error) {
           console.error("Error connecting recv transport:", error);
@@ -188,98 +211,67 @@ export const VideoCall = () => {
       });
     });
   };
-  
-  
-  
-  
+
   const createRoom = () => {
     socket.emit("create-room", (generatedRoomID: string) => {
       console.log(`Room created with ID: ${generatedRoomID}`);
-      localStorage.setItem('roomID', generatedRoomID); 
+      localStorage.setItem('roomID', generatedRoomID);
       console.log(`Stored room ID in localStorage: ${generatedRoomID}`);
     });
   };
-  
+
   const startVideoCall = async () => {
     try {
       console.log("Starting video call");
-  
-      createRoom(); 
-  
+
+      createRoom();
+
       await getLocalVideo();
       console.log("Got local video");
-  
+
       await getRtpCapabilities();
       const rtpCapabilities = rtpCapabilitiesRef.current;
       const newDevice = await createDevice(rtpCapabilities);
       if (newDevice) {
         await createSendTransport(newDevice);
-  
+
         producer = await producerTransport.produce({ track: localVideoTrackRef.current });
         console.log("Producer created with ID:", producer.id);
-        
+
         // Emit an event to notify the backend about the producer
         const roomId = localStorage.getItem('roomID');
         socket.emit('producer-ready', { producerId: producer.id, roomId: roomId });
-  
+
         await connectSendTransport();
         console.log("Started video call successfully");
       } else {
-        console.error("Device creation failed.");
+        console.error("Device creation failed");
       }
-  
     } catch (error) {
       console.error("Error starting video call:", error);
     }
   };
-  
-  
-  
 
-  const joinRoom = (roomToJoin: string) => {
-    console.log(`Attempting to join room with ID: ${roomToJoin}`);
-    socket.emit("join-room", roomToJoin, (response: any) => {
-      if (response.error) {
-        setErrorMessage(response.error);
-        console.error("Error joining room:", response.error);
-      } else {
-        console.log(`Joined room with ID: ${roomToJoin}`);
-      }
-    });
-  };
-  
-  const joinVideoCall = async (roomID: string) => {
-    if (!roomID) {
-      setErrorMessage("No room ID provided.");
-      return;
-    }
-  
-    console.log("Joining video call");
-    joinRoom(roomID);
-  
-    await getLocalVideo();
-    console.log("Got local video");
-  
-    await getRtpCapabilities();
-    const rtpCapabilities = rtpCapabilitiesRef.current;
-    const newDevice = await createDevice(rtpCapabilities);
-    if (newDevice) {
+  const joinRoom = async (roomID: string) => {
+    try {
+      console.log(`Joining room with ID: ${roomID}`);
       await createRecvTransport(roomID);
       await connectRecvTransport(roomID);
-      console.log("Joined video call successfully");
-    } else {
-      console.error("Device creation failed.");
+    } catch (error) {
+      console.error("Error joining room:", error);
     }
   };
-  
-  
 
   return (
-    <VideoP2P 
-      startVideoCall={startVideoCall} 
-      localVideoRef={localVideoRef} 
-      remoteVideoRef={remoteVideoRef} 
-      joinRoom={joinVideoCall}
+    <VideoP2P
+      startVideoCall={startVideoCall}
+      joinRoom={joinRoom}
+      localVideoRef={localVideoRef}
+      remoteVideoRef={remoteVideoRef}
+      toggleMicrophone={toggleMic}
+      toggleVideo={toggleVideo}
+      microphoneActive={micOn}
+      videoActive={videoOn}
     />
   );
 };
