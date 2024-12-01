@@ -178,7 +178,6 @@ export function setupWebSocket(server: any) {
           console.log('Producer closed for consumer');
         });
     
-        // Store the consumer in the room object
         rooms[roomID].consumers[socket.id] = consumer;
     
         const params = {
@@ -208,6 +207,61 @@ export function setupWebSocket(server: any) {
       }
     });
 
+    socket.on('end-videoCall', (roomId, callback) => {
+      const room = rooms[roomId];
+      if (!room) {
+        console.error(`Room ID not found: ${roomId}`);
+        if (callback) callback({ error: "Room not found" });
+        return;
+      }
+    
+      for (const producerTransport of Object.values(room.producerTransports)) {
+        if (producerTransport) {
+          try {
+            producerTransport.close();
+          } catch (error) {
+            console.error("Error closing producer transport:", error);
+          }
+        }
+      }
+    
+      for (const consumerTransport of Object.values(room.consumerTransports)) {
+        if (consumerTransport) {
+          try {
+            consumerTransport.close();
+          } catch (error) {
+            console.error("Error closing consumer transport:", error);
+          }
+        }
+      }
+    
+      for (const consumer of Object.values(room.consumers)) {
+        if (consumer) {
+          try {
+            consumer.close();
+          } catch (error) {
+            console.error("Error closing consumer:", error);
+          }
+        }
+      }
+    
+      if (room.producer) {
+        try {
+          room.producer.close();
+        } catch (error) {
+          console.error("Error closing producer:", error);
+        }
+      }
+    
+      delete rooms[roomId];
+    
+      console.log(`Room ${roomId} and associated resources are cleaned up.`);
+      if (callback) callback({ success: true });
+    
+    });
+    
+        
+    
     socket.on('disconnect', () => {
       console.log(`Socket disconnected: ${socket.id}`);
       const roomID = Object.keys(rooms).find(roomID => rooms[roomID].producerTransports[socket.id] || rooms[roomID].consumerTransports[socket.id]);

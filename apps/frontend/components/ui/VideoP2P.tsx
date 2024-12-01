@@ -1,23 +1,27 @@
 "use client";
 
 import { useState } from "react";
+import socket from "../videoCall/socket";
 
 export const VideoP2P = ({
   startVideoCall,
   joinRoom,
   localVideoRef,
   remoteVideoRef,
-  toggleMicrophone,
-  toggleVideo,
-  microphoneActive,
-  videoActive,
+  endVideoCall
 }: any) => {
-  const [shareScreenActive, setShareScreenActive] = useState(true);
+  const [microphoneActive, setMicrophoneActive] = useState(true);
+  const [videoActive, setVideoActive] = useState(true);
   const [roomIdInput, setRoomIdInput] = useState("");
 
-  const handleShareScreen = () => {
-    setShareScreenActive(!shareScreenActive);
+  const handleMicrophone = () => {
+    setMicrophoneActive(!microphoneActive);
   };
+
+  const handleVideo = () => {
+    setVideoActive(!videoActive);
+  };
+
 
   return (
     <div className="bg-gray-900 text-white h-screen w-screen flex flex-col">
@@ -40,10 +44,9 @@ export const VideoP2P = ({
           />
         </div>
       </div>
-      {/* Flex container for the buttons and icons */}
+
       <div className="bg-gray-800 p-4 w-full flex justify-between items-center">
-        {/* Left section with buttons */}
-        <div className="flex space-x-4">
+        <div className="flex items-center space-x-4">
           <button
             onClick={startVideoCall}
             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition duration-300"
@@ -65,10 +68,9 @@ export const VideoP2P = ({
           </button>
         </div>
 
-        {/* Right section with icons in a parent div */}
-        <div className="bg-white p-2 rounded-full flex space-x-4 items-center">
+        <div className="bg-white p-2 rounded-lg flex space-x-4 items-center">
           <button
-            onClick={toggleMicrophone}
+            onClick={handleMicrophone}
             className="transition-transform transform hover:scale-110 duration-300"
           >
             <img
@@ -79,7 +81,7 @@ export const VideoP2P = ({
           </button>
 
           <button
-            onClick={toggleVideo}
+            onClick={handleVideo}
             className="transition-transform transform hover:scale-110 duration-300"
           >
             <img
@@ -89,22 +91,7 @@ export const VideoP2P = ({
             />
           </button>
 
-          <button
-            onClick={handleShareScreen}
-            className="transition-transform transform hover:scale-110 duration-300"
-          >
-            <img
-              src={shareScreenActive ? "share-screen.png" : "stop-screen-share.png"}
-              alt="share screen"
-              className="h-6 w-6"
-            />
-          </button>
-
-          <button className="transition-transform transform hover:scale-110 duration-300">
-            <img src="full-screen.png" alt="full screen" className="h-6 w-6" />
-          </button>
-
-          <button className="transition-transform transform hover:scale-110 duration-300">
+          <button onClick={ endVideoCall } className="transition-transform transform hover:scale-110 duration-300">
             <img src="circle.png" alt="end meeting" className="h-6 w-6" />
           </button>
         </div>
@@ -112,3 +99,5 @@ export const VideoP2P = ({
     </div>
   );
 };
+
+
