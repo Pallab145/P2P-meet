@@ -1,14 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import socket from "../videoCall/socket";
 
 export const VideoP2P = ({
   startVideoCall,
   joinRoom,
   localVideoRef,
   remoteVideoRef,
-  endVideoCall
+  endVideoCall,
+  micOnAndOff,
+  videoOnAndOff,
 }: any) => {
   const [microphoneActive, setMicrophoneActive] = useState(true);
   const [videoActive, setVideoActive] = useState(true);
@@ -16,12 +17,13 @@ export const VideoP2P = ({
 
   const handleMicrophone = () => {
     setMicrophoneActive(!microphoneActive);
+    micOnAndOff(); 
   };
 
   const handleVideo = () => {
     setVideoActive(!videoActive);
+    videoOnAndOff();  
   };
-
 
   return (
     <div className="bg-gray-900 text-white h-screen w-screen flex flex-col">
@@ -91,7 +93,7 @@ export const VideoP2P = ({
             />
           </button>
 
-          <button onClick={ endVideoCall } className="transition-transform transform hover:scale-110 duration-300">
+          <button onClick={endVideoCall} className="transition-transform transform hover:scale-110 duration-300">
             <img src="circle.png" alt="end meeting" className="h-6 w-6" />
           </button>
         </div>
@@ -99,5 +101,3 @@ export const VideoP2P = ({
     </div>
   );
 };
-
-

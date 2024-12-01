@@ -267,6 +267,25 @@ export const VideoCall = () => {
     }
   };
 
+  const micOnAndOff = () => {
+    if (localAudioTrackRef.current) {
+      if (localAudioTrackRef.current.enabled) {
+        localAudioTrackRef.current.enabled = false;
+      } else {
+        localAudioTrackRef.current.enabled = true;
+      }
+    }
+  };
+
+  const videoOnAndOff = () => {
+    if (localVideoTrackRef.current) {
+      if (localVideoTrackRef.current.enabled) {
+        localVideoTrackRef.current.enabled = false;
+      } else {
+        localVideoTrackRef.current.enabled = true;
+      }
+    }
+  };
 
   const stopMediaStream = () => {
     console.log("Stopping media stream...");
@@ -351,6 +370,8 @@ export const VideoCall = () => {
       remoteVideoRef={remoteVideoRef} 
       joinRoom={joinVideoCall}
       endVideoCall={endVideoCall}
+      micOnAndOff={micOnAndOff}
+      videoOnAndOff={videoOnAndOff}
     />
   );
 };
