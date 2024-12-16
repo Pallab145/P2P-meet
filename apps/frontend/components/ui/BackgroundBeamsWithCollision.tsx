@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import React, { useRef, useState, useEffect } from "react";
-import { cn } from "../../app/lib/utils";
+import { cn } from "../../app/libs/utils";
 
 export const BackgroundBeamsWithCollision = ({
   children,

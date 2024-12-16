@@ -1,8 +1,8 @@
 "use client";
 import { useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
-import { motion } from "framer-motion";
-import { cn } from "../../app/lib/utils";
+// import { motion } from "framer-motion";
+// import { cn } from "../../app/lib/utils";
 
 export const Scroll = ({
   children 
