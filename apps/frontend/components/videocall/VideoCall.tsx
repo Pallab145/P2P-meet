@@ -7,7 +7,7 @@ import { VideoP2P } from "../../components/ui/VideoP2P";
 
 export const VideoCall= () => {
   const deviceRef = useRef<mediasoupClient.Device | null>(null);
-  const rtpCapabilitiesRef = useRef<mediasoupClient.RtpCapabilities | null>(null);
+  const rtpCapabilitiesRef = useRef<any | null>(null);
   const localAudioTrackRef = useRef<MediaStreamTrack | null>(null);
   const localVideoTrackRef = useRef<MediaStreamTrack | null>(null);
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -36,7 +36,7 @@ export const VideoCall= () => {
     }
   };
 
-  const getRtpCapabilities = (): Promise<mediasoupClient.RtpCapabilities> => {
+  const getRtpCapabilities = (): Promise<any> => {
     return new Promise((resolve, reject) => {
       console.log("Requesting RTP Capabilities");
       socket.emit('getRtpCapabilities', (response: any) => {
@@ -53,7 +53,7 @@ export const VideoCall= () => {
     });
   };
 
-  const createDevice = async (rtpCapabilities: mediasoupClient.RtpCapabilities): Promise<mediasoupClient.Device | null> => {
+  const createDevice = async (rtpCapabilities: any): Promise<mediasoupClient.Device | null> => {
     console.log("Creating device");
     if (!rtpCapabilities) {
       console.error("RTP capabilities not available.");
