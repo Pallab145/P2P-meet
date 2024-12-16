@@ -26,15 +26,15 @@ export const VideoP2P = ({
   };
 
   return (
-    <div className="bg-gray-900 text-white h-screen w-screen flex flex-col">
-      <div className="flex flex-1">
+    <div className="bg-gray-900 text-white min-h-screen flex flex-col">
+      <div className="flex flex-col lg:flex-row flex-1">
         <div className="flex-1 flex flex-col items-center justify-center bg-gray-900 p-4">
           <h2 className="text-xl font-bold mb-4">Local Video</h2>
           <video
             ref={localVideoRef}
             autoPlay
             muted
-            className="w-full h-full bg-black rounded-lg shadow-lg"
+            className="w-full h-64 md:h-full bg-black rounded-lg shadow-lg"
           />
         </div>
         <div className="flex-1 flex flex-col items-center justify-center bg-gray-900 p-4">
@@ -42,13 +42,13 @@ export const VideoP2P = ({
           <video
             ref={remoteVideoRef}
             autoPlay
-            className="w-full h-full bg-black rounded-lg shadow-lg"
+            className="w-full h-64 md:h-full bg-black rounded-lg shadow-lg"
           />
         </div>
       </div>
 
-      <div className="bg-gray-800 p-4 w-full flex justify-between items-center">
-        <div className="flex items-center space-x-4">
+      <div className="bg-gray-800 p-4 w-full flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
+        <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4">
           <button
             onClick={startVideoCall}
             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition duration-300"

@@ -1,4 +1,3 @@
-"use client";
 
 import { TypewriterEffectSmooth } from "./ui/TypeWritterEffect";
 
@@ -17,7 +16,7 @@ export function TypewriterEffectSmoothDemo() {
       text: "love one's with",
     },
     {
-      text: "meet.io",
+      text: "p2p-meet .",
       className: "text-blue-500 dark:text-blue-500",
     },
   ];

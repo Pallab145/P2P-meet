@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { cn } from "../../app/lib/utils";
 
 export const Scroll = ({
-  children // Corrected the typo here
+  children 
 }: {
   children: React.ReactNode
 }) => {
@@ -22,7 +22,6 @@ export const Scroll = ({
   return (
     <div className="h-full overflow-y-auto w-full" ref={gridRef}>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 items-start max-w-5xl mx-auto gap-10 py-40 px-10">
-        {/* Placeholder for the children prop */}
         {children}
       </div>
     </div>

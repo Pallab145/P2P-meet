@@ -14,11 +14,8 @@ export const RightSideCard = () => {
             <TextGenerateEffect words={ word } />
             <div className="my-6"></div>
             <button onClick={() => {
-              router.push('/videoCall')
-            }} className="px-4 py-1 mr-5 bg-blue-600 rounded-md hover:bg-blue-500">Start</button>
-            <button onClick={() => {
-              router.push('/videoCall')
-            }} className="px-4 py-1 bg-blue-600 rounded-md hover:bg-blue-500">Join</button>
+              router.push('/videocall')
+            }} className="px-4 py-1 mr-5 bg-blue-600 rounded-md hover:bg-blue-500">Get Started</button>
           </div>
         </div>
       </div>

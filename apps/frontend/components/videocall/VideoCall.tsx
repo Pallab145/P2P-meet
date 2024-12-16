@@ -1,7 +1,8 @@
 "use client";
+
 import { useState,useRef } from "react";
 import * as mediasoupClient from "mediasoup-client";
-import socket from "./socket";
+import socket from "../../components/videocall/socket";
 import { VideoP2P } from "../../components/ui/VideoP2P";
 
 export const VideoCall= () => {
@@ -144,49 +145,53 @@ export const VideoCall= () => {
   
   const connectRecvTransport = async (roomID: string) => {
     socket.emit('get-producer', { roomId: roomID }, async (response: any) => {
-      if (!response || !response.producerId) {
-        console.error("Producer not initialized or response is invalid");
-        return;
-      }
-  
-      socket.emit('consume', {
-        rtpCapabilities: deviceRef.current?.rtpCapabilities,
-        producerId: response.producerId,
-        roomID: roomID, 
-      }, async (consumeResponse: any) => {
-        console.log("Consume response:", consumeResponse);
-  
-        if (!consumeResponse) {
-          console.error("No response received from consume call.");
-          return;
+        if (!response || !response.producerId) {
+            console.error("Producer not initialized or response is invalid");
+            return;
         }
-  
-        const { params } = consumeResponse;
-        if (!params || params.error) {
-          console.error("Error consuming transport or params is undefined:", params?.error);
-          return;
-        }
-  
-        try {
-          consumer = await consumerTransport.consume({
-            id: params.id,
-            producerId: params.producerId,
-            kind: params.kind,
-            rtpParameters: params.rtpParameters,
-          });
-  
-          const { track } = consumer;
-          if (remoteVideoRef.current) {
-            remoteVideoRef.current.srcObject = new MediaStream([track]);
-          }
-  
-          socket.emit('consumer-resume');
-        } catch (error) {
-          console.error("Error connecting recv transport:", error);
-        }
-      });
+
+        socket.emit('consume', {
+            rtpCapabilities: deviceRef.current?.rtpCapabilities,
+            producerId: response.producerId,
+            roomID: roomID,
+        }, async (consumeResponse: any) => {
+            console.log("Consume response:", consumeResponse);
+
+            if (!consumeResponse) {
+                console.error("No response received from consume call.");
+                return;
+            }
+
+            const { params } = consumeResponse;
+            if (!params || params.error) {
+                console.error("Error consuming transport or params is undefined:", params?.error);
+                return;
+            }
+
+            try {
+                consumer = await consumerTransport.consume({
+                    id: params.id,
+                    producerId: params.producerId,
+                    kind: params.kind,
+                    rtpParameters: params.rtpParameters,
+                });
+
+                const { track } = consumer;
+                if (remoteVideoRef.current) {
+                    console.log("Setting remote video track");
+                    remoteVideoRef.current.srcObject = new MediaStream([track]);
+                } else {
+                    console.error("Remote video element not found");
+                }
+
+                socket.emit('consumer-resume');
+            } catch (error) {
+                console.error("Error connecting recv transport:", error);
+            }
+        });
     });
-  };
+};
+
   
   const createRoom = () => {
     socket.emit("create-room", (generatedRoomID: string) => {

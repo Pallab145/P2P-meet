@@ -1,4 +1,5 @@
-import { VideoCall } from "./VideoCall";
+import { VideoCall } from "../../components/videocall/VideoCall";
+
 
 
 export default function Home(){
