@@ -6,7 +6,7 @@ export const AppBar = () => {
                 <div className="h-8 w-8 mr-2">
                     <img src="/video-camera.png" alt="video-camera" />
                 </div>
-                <span className="text-xl font-semibold">meet.io</span>
+                <span className="text-xl font-semibold pl-2">p2p-meet</span>
             </div>
 
             <div className="flex items-center space-x-4">

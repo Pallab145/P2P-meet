@@ -1,7 +1,11 @@
+"use client"
+
+import { useRouter } from "next/navigation";
 import { TextGenerateEffect } from "./ui/Text-generate-effect";
 import { WobbleCard } from "./ui/WobbleCard";
 
 export const RightSideCard = () => {
+  const router = useRouter();
   return (
     <div className="flex w-full p-8 rounded-3xl shadow-lg">
       <div className="basis-1/2 flex items-center justify-center">
@@ -9,8 +13,12 @@ export const RightSideCard = () => {
           <div className="mr-4">
             <TextGenerateEffect words={ word } />
             <div className="my-6"></div>
-            <button className="px-4 py-1 mr-5 bg-blue-600 rounded-md hover:bg-blue-500">Start</button>
-            <button className="px-4 py-1 bg-blue-600 rounded-md hover:bg-blue-500">Join</button>
+            <button onClick={() => {
+              router.push('/videoCall')
+            }} className="px-4 py-1 mr-5 bg-blue-600 rounded-md hover:bg-blue-500">Start</button>
+            <button onClick={() => {
+              router.push('/videoCall')
+            }} className="px-4 py-1 bg-blue-600 rounded-md hover:bg-blue-500">Join</button>
           </div>
         </div>
       </div>

@@ -2,9 +2,9 @@
 import { useState,useRef } from "react";
 import * as mediasoupClient from "mediasoup-client";
 import socket from "./socket";
-import { VideoP2P } from "../ui/VideoP2P";
+import { VideoP2P } from "../../components/ui/VideoP2P";
 
-export const VideoCall = () => {
+export const VideoCall= () => {
   const deviceRef = useRef<mediasoupClient.Device | null>(null);
   const rtpCapabilitiesRef = useRef<mediasoupClient.RtpCapabilities | null>(null);
   const localAudioTrackRef = useRef<MediaStreamTrack | null>(null);
