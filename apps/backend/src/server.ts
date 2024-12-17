@@ -7,7 +7,7 @@ import { setupWebSocket } from './websocket/videoCallSocket';
 
 const app = express();
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: 'https://p2-p-meet-frontend.vercel.app/dashboard',
   methods: ["GET", "POST"],
   credentials: true
 }));
