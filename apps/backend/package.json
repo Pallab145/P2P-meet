@@ -5,8 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node dist/server.js",
-    "build": "tsc -b",
-    "postbuild": "cpy dist/**/* public/"
+    "build": "tsc -b"
   },
   "keywords": [],
   "author": "",
@@ -20,7 +19,6 @@
   },
   "devDependencies": {
     "@types/node": "^22.7.4",
-    "cpy-cli": "^5.0.0",
     "typescript": "^5.6.2"
   }
 }
