@@ -4,14 +4,22 @@ import { createServer } from 'http';
 import { createWorker } from './configure/mediasoup-config';
 import { setupWebSocket } from './websocket/videoCallSocket';
 
-
 const app = express();
+
+// CORS middleware setup
 app.use(cors({
   origin: 'https://p2-p-meet-frontend.vercel.app',
   methods: ["GET", "POST"],
   credentials: true
 }));
+
+// JSON parsing middleware
 app.use(express.json());
+
+// Root route handler to avoid 404 for GET requests to '/'
+app.get('/', (req, res) => {
+  res.send('Welcome to the Mediasoup Video Call Server!');
+});
 
 const server = createServer(app);
 
