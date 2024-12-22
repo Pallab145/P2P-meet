@@ -8,7 +8,8 @@ const app = express();
 
 // CORS middleware setup
 app.use(cors({
-  origin: 'https://p2-p-meet-frontend.vercel.app',
+  // origin: 'https://p2-p-meet-frontend.vercel.app',
+  origin: 'https://localhost:3000',
   methods: ["GET", "POST"],
   credentials: true
 }));

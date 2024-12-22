@@ -193,60 +193,58 @@ export const VideoCall= () => {
 };
 
   
-  const createRoom = () => {
-    socket.emit("create-room", (generatedRoomID: string) => {
-      console.log(`Room created with ID: ${generatedRoomID}`);
-      localStorage.setItem('roomID', generatedRoomID); 
-      console.log(`Stored room ID in localStorage: ${generatedRoomID}`);
-    });
-  };
+const createRoom = () => {
+  socket.emit("create-room", (generatedRoomID: string) => {
+    console.log(`Room created with ID: ${generatedRoomID}`);
+    localStorage.setItem('roomID', generatedRoomID); 
+    console.log(`Stored room ID in localStorage: ${generatedRoomID}`);
+  });
+};
   
-  const startVideoCall = async () => {
-    try {
-      console.log("Starting video call");
+const startVideoCall = async () => {
+  try {
+    console.log("Starting video call");
   
-      createRoom(); 
+    createRoom(); 
   
-      await getLocalVideo(true,true);
-      console.log("Got local video");
+    await getLocalVideo(true,true);
+    console.log("Got local video");
   
-      await getRtpCapabilities();
-      const rtpCapabilities = rtpCapabilitiesRef.current;
-      const newDevice = await createDevice(rtpCapabilities);
-      if (newDevice) {
-        await createSendTransport(newDevice);
+    await getRtpCapabilities();
+    const rtpCapabilities = rtpCapabilitiesRef.current;
+    const newDevice = await createDevice(rtpCapabilities);
+    if (newDevice) {
+      await createSendTransport(newDevice);
   
-        producer = await producerTransport.produce({ track: localVideoTrackRef.current });
-        console.log("Producer created with ID:", producer.id);
+      producer = await producerTransport.produce({ track: localVideoTrackRef.current });
+      console.log("Producer created with ID:", producer.id);
         
-        const roomId = localStorage.getItem('roomID');
-        socket.emit('producer-ready', { producerId: producer.id, roomId: roomId });
+      const roomId = localStorage.getItem('roomID');
+      socket.emit('producer-ready', { producerId: producer.id, roomId: roomId });
   
-        await connectSendTransport();
-        console.log("Started video call successfully");
-      } else {
-        console.error("Device creation failed.");
-      }
-  
-    } catch (error) {
-      console.error("Error starting video call:", error);
+      await connectSendTransport();
+      console.log("Started video call successfully");
+    } else {
+      console.error("Device creation failed.");
     }
-  };
   
-  
+  } catch (error) {
+    console.error("Error starting video call:", error);
+  }
+};
   
 
-  const joinRoom = (roomToJoin: string) => {
-    console.log(`Attempting to join room with ID: ${roomToJoin}`);
-    socket.emit("join-room", roomToJoin, (response: any) => {
-      if (response.error) {
-        setErrorMessage(response.error);
-        console.error("Error joining room:", response.error);
-      } else {
-        console.log(`Joined room with ID: ${roomToJoin}`);
-      }
-    });
-  };
+const joinRoom = (roomToJoin: string) => {
+  console.log(`Attempting to join room with ID: ${roomToJoin}`);
+  socket.emit("join-room", roomToJoin, (response: any) => {
+    if (response.error) {
+      setErrorMessage(response.error);
+      console.error("Error joining room:", response.error);
+    } else {
+      console.log(`Joined room with ID: ${roomToJoin}`);
+    }
+  });
+};
   
   const joinVideoCall = async (roomID: string) => {
     if (!roomID) {
