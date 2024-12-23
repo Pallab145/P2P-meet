@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "tsc -b && node dist/server.js"
+    "start": "node dist/server.js",
+    "build": "tsc -b"
   },
   "keywords": [],
   "author": "",
