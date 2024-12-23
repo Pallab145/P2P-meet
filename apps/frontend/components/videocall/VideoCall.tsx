@@ -196,7 +196,8 @@ export const VideoCall= () => {
 const createRoom = () => {
   socket.emit("create-room", (generatedRoomID: string) => {
     console.log(`Room created with ID: ${generatedRoomID}`);
-    localStorage.setItem('roomID', generatedRoomID); 
+    localStorage.setItem('roomID', generatedRoomID);
+    alert(`room id ${generatedRoomID}`)
     console.log(`Stored room ID in localStorage: ${generatedRoomID}`);
   });
 };
@@ -246,135 +247,134 @@ const joinRoom = (roomToJoin: string) => {
   });
 };
   
-  const joinVideoCall = async (roomID: string) => {
+const joinVideoCall = async (roomID: string) => {
+  if (!roomID) {
+    setErrorMessage("No room ID provided.");
+    return;
+  }
+  
+  console.log("Joining video call");
+  joinRoom(roomID);
+  
+  await getLocalVideo(true,true);
+  console.log("Got local video");
+  
+  await getRtpCapabilities();
+  const rtpCapabilities = rtpCapabilitiesRef.current;
+  const newDevice = await createDevice(rtpCapabilities);
+  if (newDevice) {
+    await createRecvTransport(roomID);
+    await connectRecvTransport(roomID);
+    console.log("Joined video call successfully");
+  } else {
+    console.error("Device creation failed.");
+  }
+};
+
+const micOnAndOff = () => {
+  if (localAudioTrackRef.current) {
+    if (localAudioTrackRef.current.enabled) {
+      localAudioTrackRef.current.enabled = false;
+    } else {
+      localAudioTrackRef.current.enabled = true;
+    }
+  }
+};
+
+const videoOnAndOff = () => {
+  if (localVideoTrackRef.current) {
+    if (localVideoTrackRef.current.enabled) {
+      localVideoTrackRef.current.enabled = false;
+    } else {
+      localVideoTrackRef.current.enabled = true;
+    }
+  }
+};
+
+const stopMediaStream = () => {
+  console.log("Stopping media stream...");
+    
+  if (localAudioTrackRef.current) {
+    localAudioTrackRef.current.stop();
+    localAudioTrackRef.current = null;
+    console.log("Stopped local audio track");
+  }
+  
+  if (localVideoTrackRef.current) {
+    localVideoTrackRef.current.stop();
+    localVideoTrackRef.current = null;
+    console.log("Stopped local video track");
+  }
+  
+  if (localVideoRef.current?.srcObject instanceof MediaStream) {
+    const stream = localVideoRef.current.srcObject as MediaStream;
+    stream.getTracks().forEach((track) => track.stop());
+    localVideoRef.current.srcObject = null;
+  }
+  
+  if (remoteVideoRef.current?.srcObject instanceof MediaStream) {
+    const stream = remoteVideoRef.current.srcObject as MediaStream;
+    stream.getTracks().forEach((track) => track.stop());
+    remoteVideoRef.current.srcObject = null;
+  }
+  
+  navigator.mediaDevices.getUserMedia({ audio: true })
+    .then((stream) => {
+      stream.getTracks().forEach((track) => track.stop());
+      console.log("Stopped all additional audio tracks");
+    })
+    .catch((error) => {
+      console.error("Error stopping additional audio tracks:", error);
+    });
+  };
+  
+  
+  
+  
+
+const endVideoCall = () => {
+  const roomID = localStorage.getItem("roomID") || "";
+  
+  try {
     if (!roomID) {
-      setErrorMessage("No room ID provided.");
+      console.warn("No room ID found. Cannot end the video call.");
       return;
     }
   
-    console.log("Joining video call");
-    joinRoom(roomID);
-  
-    await getLocalVideo(true,true);
-    console.log("Got local video");
-  
-    await getRtpCapabilities();
-    const rtpCapabilities = rtpCapabilitiesRef.current;
-    const newDevice = await createDevice(rtpCapabilities);
-    if (newDevice) {
-      await createRecvTransport(roomID);
-      await connectRecvTransport(roomID);
-      console.log("Joined video call successfully");
-    } else {
-      console.error("Device creation failed.");
-    }
-  };
-
-  const micOnAndOff = () => {
-    if (localAudioTrackRef.current) {
-      if (localAudioTrackRef.current.enabled) {
-        localAudioTrackRef.current.enabled = false;
-      } else {
-        localAudioTrackRef.current.enabled = true;
-      }
-    }
-  };
-
-  const videoOnAndOff = () => {
-    if (localVideoTrackRef.current) {
-      if (localVideoTrackRef.current.enabled) {
-        localVideoTrackRef.current.enabled = false;
-      } else {
-        localVideoTrackRef.current.enabled = true;
-      }
-    }
-  };
-
-  const stopMediaStream = () => {
-    console.log("Stopping media stream...");
-    
-    if (localAudioTrackRef.current) {
-      localAudioTrackRef.current.stop();
-      localAudioTrackRef.current = null;
-      console.log("Stopped local audio track");
-    }
-  
-    if (localVideoTrackRef.current) {
-      localVideoTrackRef.current.stop();
-      localVideoTrackRef.current = null;
-      console.log("Stopped local video track");
-    }
-  
-    if (localVideoRef.current?.srcObject instanceof MediaStream) {
-      const stream = localVideoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach((track) => track.stop());
-      localVideoRef.current.srcObject = null;
-    }
-  
-    if (remoteVideoRef.current?.srcObject instanceof MediaStream) {
-      const stream = remoteVideoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach((track) => track.stop());
-      remoteVideoRef.current.srcObject = null;
-    }
-  
-    navigator.mediaDevices.getUserMedia({ audio: true })
-      .then((stream) => {
-        stream.getTracks().forEach((track) => track.stop());
-        console.log("Stopped all additional audio tracks");
-      })
-      .catch((error) => {
-        console.error("Error stopping additional audio tracks:", error);
-      });
-  };
-  
-  
-  
-  
-
-  const endVideoCall = () => {
-    const roomID = localStorage.getItem("roomID") || "";
-  
-    try {
-      if (!roomID) {
-        console.warn("No room ID found. Cannot end the video call.");
-        return;
-      }
-  
-      console.log(`Ending video call for room ID: ${roomID}`);
-      socket.emit("end-videoCall", roomID, () => {
-        console.log(`Video call ended for room ID: ${roomID}`);
+    console.log(`Ending video call for room ID: ${roomID}`);
+    socket.emit("end-videoCall", roomID, () => {
+      console.log(`Video call ended for room ID: ${roomID}`);
       
-        stopMediaStream(); 
-        localStorage.removeItem("roomID");
-        console.log("Room ID removed from localStorage");
+      stopMediaStream(); 
+      localStorage.removeItem("roomID");
+      console.log("Room ID removed from localStorage");
   
-        if (producerTransport) producerTransport.close();
-        if (consumerTransport) consumerTransport.close();
-        if (producer) producer.close();
-        if (consumer) consumer.close();
+      if (producerTransport) producerTransport.close();
+      if (consumerTransport) consumerTransport.close();
+      if (producer) producer.close();
+      if (consumer) consumer.close();
   
-        producerTransport = null;
-        consumerTransport = null;
-        producer = null;
-        consumer = null;
-      });
-    } catch (error) {
-      console.error("Error occurred during endVideoCall");
-      console.error(error);
-    }
-  };
+      producerTransport = null;
+      consumerTransport = null;
+      producer = null;
+      consumer = null;
+    });
+  } catch (error) {
+    console.error("Error occurred during endVideoCall");
+    console.error(error);
+  }
+};
   
   
 
-  return (
-    <VideoP2P 
-      startVideoCall={startVideoCall} 
-      localVideoRef={localVideoRef} 
-      remoteVideoRef={remoteVideoRef} 
-      joinRoom={joinVideoCall}
-      endVideoCall={endVideoCall}
-      micOnAndOff={micOnAndOff}
-      videoOnAndOff={videoOnAndOff}
-    />
-  );
+return (
+  <VideoP2P 
+    startVideoCall={startVideoCall} 
+    localVideoRef={localVideoRef} 
+    remoteVideoRef={remoteVideoRef} 
+    joinRoom={joinVideoCall}
+    endVideoCall={endVideoCall}
+    micOnAndOff={micOnAndOff}
+    videoOnAndOff={videoOnAndOff}
+  />);
 };

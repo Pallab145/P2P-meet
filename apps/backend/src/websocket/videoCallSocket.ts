@@ -5,7 +5,7 @@ import { mediaCodecs, worker } from '../configure/mediasoup-config';
 export function setupWebSocket(server: any) {
   const io = new Server(server, {
     cors: {
-      origin: "http://localhost:3000",
+      origin: "https://p2-p-meet-frontend.vercel.app",
       methods: ["GET", "POST"],
       credentials: true,
     },
