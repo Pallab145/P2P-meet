@@ -14,7 +14,6 @@ app.use(cors({
   credentials: true
 }));
 
-// JSON parsing middleware
 app.use(express.json());
 
 // Root route handler to avoid 404 for GET requests to '/'
